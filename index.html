@@ -375,12 +375,20 @@
 
   const tfetch = (u, o, ms) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms); return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); };
   async function postGAS(p) {
+    // Try twice. Retry on "busy", network errors, timeouts and non-JSON replies (e.g. a Google error page).
     let last;
     for (let a = 0; a < 2; a++) {
+      if (a) await new Promise((r) => setTimeout(r, 1500 + Math.random() * 2500));
+      let txt;
       try {
         const r = await tfetch(C.appsScriptUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(p), redirect: "follow" }, 25000);
-        const j = await r.json(); if (j.ok) return j; last = new Error(j.error || "error");
-      } catch (e) { last = e; }
+        txt = await r.text();
+      } catch (e) { last = e; continue; }
+      let j;
+      try { j = JSON.parse(txt); } catch (e) { last = new Error("server not ready"); continue; }
+      if (j.ok) return j;
+      last = new Error(j.error || "error");
+      if (!/busy/i.test(j.error || "")) break;   // a real error (e.g. unknown site): retrying won't help
     }
     throw last;
   }
@@ -409,7 +417,7 @@
       loc = locStatus();
       await postGAS({
         type: "clock", token: C.token, clockId: state.clockId,
-        siteCode: siteCode, siteName: site.name, siteLat: site.lat, siteLng: site.lng, radius: site.radius,
+        siteCode: siteCode, siteName: site.name, siteLat: site.lat, siteLng: site.lng, radius: site.radius, // ignored by the new server; kept for the old one
         name: state.name, mobile: state.mobile, action: state.action, breakMins: state.action === "out" ? state.breakMins : 0,
         lat: state.pos ? state.pos.coords.latitude : null, lng: state.pos ? state.pos.coords.longitude : null,
         accuracy: state.pos ? Math.round(state.pos.coords.accuracy) : null,

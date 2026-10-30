@@ -108,9 +108,14 @@
   const flagsOf = (r) => { const f = []; if (r["Location"] === "off_site") f.push("Off site " + r["Distance m"] + " m"); if (r["Location"] === "denied" || r["Location"] === "unavailable") f.push("No location"); if (r["Photo via fallback"]) f.push("Fallback photo"); return f; };
   async function load() {
     $("err").textContent = "Loading…";
-    const q = new URLSearchParams({ action: "clocks", key: getKey(), from: $("from").value, to: $("to").value, site: $("site").value });
+    const q = { action: "clocks", key: getKey(), from: $("from").value, to: $("to").value, site: $("site").value };
     try {
-      const r = await fetch(C.appsScriptUrl + "?" + q, { redirect: "follow" }); const j = await r.json();
+      // POST keeps the admin key out of the URL / browser history.
+      const r = await fetch(C.appsScriptUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(q), redirect: "follow" });
+      let j; try { j = JSON.parse(await r.text()); } catch (x) { throw new Error("server not ready (redeploy the Apps Script?)"); }
+      if (!j.ok && j.error === "bad token") {   // older Apps Script version without POST reads: fall back to GET
+        const r2 = await fetch(C.appsScriptUrl + "?" + new URLSearchParams(q), { redirect: "follow" }); j = await r2.json();
+      }
       if (!j.ok) { if (j.error === "bad key") { sessionStorage.removeItem("ss_admin_key"); init(); $("lerr").textContent = "Wrong admin key."; return; } throw new Error(j.error); }
       data = j.rows; render(); $("err").textContent = "";
     } catch (e) { $("err").textContent = "Couldn’t load: " + e.message + ". Use the Google Sheet instead."; }
