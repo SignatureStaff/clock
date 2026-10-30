@@ -27,6 +27,14 @@ window.SS_CONFIG = {
       lat: -16.92792,  // CCC entrance corridor (Jack, 30 Oct 2026)
       lng: 145.77783,  // CCC entrance corridor (Jack, 30 Oct 2026)
       radius: 250
+    },
+    office: {
+      name: "Signature Staff Office",
+      spot: "Reception",
+      // 3/194 McLeod Street, Cairns North QLD 4870
+      lat: -16.9137428,
+      lng: 145.7640799,
+      radius: 150
     }
   }
 };
