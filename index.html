@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Clock in · Signature Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script>
+  (function () {
+    var b = (window.SS_CONFIG || {}).brand || {}, r = document.documentElement.style;
+    if (b.primary) r.setProperty("--sky", b.primary);
+    if (b.dark) r.setProperty("--navy", b.dark);
+    if (b.icon) { var l = document.createElement("link"); l.rel = "icon"; l.href = b.icon; document.head.appendChild(l);
+      var a = document.createElement("link"); a.rel = "apple-touch-icon"; a.href = b.icon; document.head.appendChild(a); }
+  })();
+</script>
+<style>
+  :root {
+    --navy: #0A1F44;      /* Signature Staff navy */
+    --sky: #49AADE;       /* Signature Staff sky blue */
+    --reef: #FFFFFF;      /* text on navy */
+    --lagoon: var(--sky);
+    --surface: var(--navy);
+    --card: #FFFFFF;
+    --line: #2B4270;
+    --muted: #B9C4D6;
+    --danger: #FF8A73;
+    --ok: #6FD39A;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px; line-height: 1.45;
+    background: var(--surface); color: var(--reef);
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+  }
+  main { max-width: 440px; margin: 0 auto; padding: 20px 20px 32px; }
+  .site { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: var(--muted); font-size: 15px; }
+  .site strong { color: var(--reef); font-weight: 600; }
+  .step-note a { color: var(--sky); }
+  .clock {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 800; font-size: clamp(80px, 28vw, 120px); line-height: .95;
+    letter-spacing: -0.02em; margin: 22px 0 4px; font-variant-numeric: tabular-nums;
+  }
+  .clock small { font-size: .32em; font-weight: 600; letter-spacing: 0; margin-left: 6px; }
+  .date { color: var(--muted); margin: 0 0 26px; }
+  label { display: block; font-weight: 600; margin: 0 0 6px; font-size: 15px; }
+  input {
+    width: 100%; font: inherit; font-size: 19px; padding: 13px 14px;
+    border: 2px solid transparent; border-radius: 6px; background: var(--card); color: var(--navy);
+  }
+  input:focus { outline: none; border-color: var(--sky); }
+  input::placeholder { color: #8A97AA; }
+  .field { margin-bottom: 16px; }
+  .hint { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .err { color: var(--danger); font-size: 15px; margin-top: 6px; min-height: 1em; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 12px; }
+  button:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+  .big {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700;
+    font-size: 26px; padding: 22px 10px; letter-spacing: .01em;
+  }
+  .in { background: var(--sky); color: var(--navy); }
+  .out { background: #FFFFFF; color: var(--navy); }
+  .wide { width: 100%; padding: 17px; font-size: 19px; font-weight: 700; background: var(--sky); color: var(--navy); border-radius: 6px; }
+  .ghost { background: transparent; color: var(--reef); border: 1.5px solid var(--line); padding: 15px; font-weight: 600; width: 100%; }
+  button[disabled] { opacity: .55; cursor: default; }
+  .loc { margin-top: 22px; font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: #F2C14E; } .dot.bad { background: var(--danger); }
+  h1 { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 800; font-size: 34px; line-height: 1.1; margin: 8px 0 6px; }
+  .step-note { color: var(--muted); margin: 0 0 16px; }
+  .cam {
+    position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 16px; overflow: hidden;
+    background: #000; margin-bottom: 14px;
+  }
+  .cam video, .cam img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cam video { transform: scaleX(-1); }
+  .breaks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip { padding: 10px 14px; border: 1.5px solid var(--line); background: transparent; color: var(--reef); border-radius: 999px; font-weight: 500; }
+  .chip[aria-pressed="true"] { border-color: var(--sky); background: var(--sky); color: var(--navy); font-weight: 700; }
+  .stack { display: grid; gap: 10px; }
+  .done-mark {
+    width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--sky); color: var(--navy); font-size: 34px; margin: 30px 0 10px;
+  }
+  .receipt { border-top: 1.5px solid var(--line); margin-top: 18px; padding-top: 14px; display: grid; gap: 6px; font-size: 16px; }
+  .receipt div { display: flex; justify-content: space-between; gap: 10px; }
+  .receipt span:first-child { color: var(--muted); }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: no-preference) {
+    .done-mark { animation: pop .35s ease-out; }
+    @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  }
+  .brandbar {
+    background: #fff; border-radius: 999px; max-width: 420px;
+    margin: calc(12px + env(safe-area-inset-top, 0px)) auto 0; width: calc(100% - 28px);
+    padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .brandbar img { height: 34px; width: auto; display: block; }
+  .brandbar span { font-size: 14px; font-weight: 700; color: var(--navy); }
+</style>
+</head>
+<body>
+<header class="brandbar"><img src="https://app.signaturestaff.com.au/wp-content/uploads/2026/03/Signature-Staff-Logo-300x70.png" alt="Signature Staff" id="brandLogo"><span>Staff clock-in</span></header>
+<main>
+
+  <!-- Unknown site -->
+  <section id="badsite" hidden>
+    <h1>This QR code isn’t set up yet</h1>
+    <p class="step-note">Let your Signature Staff contact know which site you’re at. Call the Duty Manager on <a href="tel:0418533357">0418 533 357</a>.</p>
+  </section>
+
+  <!-- Step 1: who and what -->
+  <section id="step1" hidden>
+    <div class="site"><strong id="siteName"></strong><span id="siteSpot"></span></div>
+    <div class="clock" id="clock" aria-live="off">--:--</div>
+    <p class="date" id="date"></p>
+
+    <div class="field">
+      <label for="name">Your full name</label>
+      <input id="name" autocomplete="name" autocapitalize="words" maxlength="80">
+    </div>
+    <div class="field">
+      <label for="mobile">Your mobile</label>
+      <input id="mobile" type="tel" inputmode="tel" autocomplete="tel" placeholder="04xx xxx xxx" maxlength="16">
+      <div class="hint">Use the number you gave Signature Staff.</div>
+      <div class="err" id="err1" role="alert"></div>
+    </div>
+
+    <div class="actions">
+      <button class="big in" id="btnIn">Clock in</button>
+      <button class="big out" id="btnOut">Clock out</button>
+    </div>
+
+    <div class="loc"><span class="dot" id="locDot"></span><span id="locText">Finding your location…</span></div>
+  </section>
+
+  <!-- Step 2: breaks (clock out only) -->
+  <section id="step2" hidden>
+    <h1>Did you take an unpaid break?</h1>
+    <p class="step-note">Pick the total time.</p>
+    <div class="breaks" id="breaks"></div>
+    <button class="wide" id="breakNext">Next: take your photo</button>
+    <p></p>
+    <button class="ghost" id="breakBack">Back</button>
+  </section>
+
+  <!-- Step 3: photo -->
+  <section id="step3" hidden>
+    <h1 id="photoTitle">Take a selfie</h1>
+    <p class="step-note" id="photoNote"></p>
+    <div class="cam">
+      <video id="video" playsinline autoplay muted></video>
+      <img id="preview" alt="Your photo" hidden>
+    </div>
+    <canvas id="canvas" hidden></canvas>
+    <input id="fallbackFile" type="file" accept="image/*" capture="user" hidden>
+    <div class="err" id="err3" role="alert"></div>
+    <div id="backup" hidden></div>
+    <div class="stack">
+      <button class="wide" id="snap">Take photo</button>
+      <button class="wide" id="submit" hidden></button>
+      <button class="ghost" id="retake" hidden>Retake</button>
+      <button class="ghost" id="photoBack">Back</button>
+    </div>
+  </section>
+
+  <!-- Step 4: done -->
+  <section id="step4" hidden>
+    <div class="done-mark" aria-hidden="true">✓</div>
+    <h1 id="doneTitle"></h1>
+    <p class="step-note" id="doneNote"></p>
+    <div class="receipt" id="receipt"></div>
+    <p></p>
+    <button class="ghost" id="again">Done</button>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  const C = window.SS_CONFIG;
+  const TZ = "Australia/Brisbane";
+  const $ = (id) => document.getElementById(id);
+  if (C.brand && C.brand.logo) $("brandLogo").src = C.brand.logo;
+
+  const params = new URLSearchParams(location.search);
+  const siteCode = (params.get("site") || "").toLowerCase();
+  const site = C.sites[siteCode];
+
+  const state = { action: null, breakMins: 0, photo: null, photoSource: "camera", pos: null, posError: null, stream: null, busy: false };
+
+  function show(id) {
+    ["badsite", "step1", "step2", "step3", "step4"].forEach((s) => ($(s).hidden = s !== id));
+    window.scrollTo(0, 0);
+  }
+
+  if (!site) { show("badsite"); return; }
+
+  // ---- Step 1 setup
+  $("siteName").textContent = site.name;
+  $("siteSpot").textContent = site.spot || "";
+  function tick() {
+    const now = new Date();
+    const t = now.toLocaleTimeString("en-AU", { timeZone: TZ, hour: "numeric", minute: "2-digit", hour12: true });
+    const parts = t.split(" ");
+    $("clock").innerHTML = parts[0] + "<small>" + (parts[1] || "").toLowerCase() + "</small>";
+    $("date").textContent = now.toLocaleDateString("en-AU", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
+  }
+  tick(); setInterval(tick, 1000);
+
+  try {
+    $("name").value = localStorage.getItem("ss_name") || "";
+    $("mobile").value = localStorage.getItem("ss_mobile") || "";
+  } catch (e) {}
+
+  // ---- Location
+  function distanceM(lat1, lon1, lat2, lon2) {
+    const R = 6371000, toR = (d) => (d * Math.PI) / 180;
+    const dLat = toR(lat2 - lat1), dLon = toR(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toR(lat1)) * Math.cos(toR(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function locStatus() {
+    if (!state.pos) return { status: "unavailable", dist: null };
+    const d = distanceM(state.pos.coords.latitude, state.pos.coords.longitude, site.lat, site.lng);
+    return { status: d <= site.radius ? "on_site" : "off_site", dist: Math.round(d) };
+  }
+  function renderLoc() {
+    const dot = $("locDot"), txt = $("locText");
+    dot.className = "dot";
+    if (state.pos) {
+      const { status, dist } = locStatus();
+      if (status === "on_site") { dot.classList.add("ok"); txt.textContent = "Location found: you’re at " + site.name + "."; }
+      else { dot.classList.add("warn"); txt.textContent = "Location found, but it looks like you’re about " + (dist >= 1000 ? (dist / 1000).toFixed(1) + " km" : dist + " m") + " away. You can still continue."; }
+    } else if (state.posError) {
+      dot.classList.add("bad");
+      txt.textContent = "Location is off. Turn on Location for your browser so your clock-in can be verified.";
+    }
+  }
+  function getLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) { state.posError = "unsupported"; renderLoc(); return resolve(); }
+      navigator.geolocation.getCurrentPosition(
+        (p) => { if (!state.pos || p.coords.accuracy <= state.pos.coords.accuracy) state.pos = p; state.posError = null; renderLoc(); resolve(); },
+        (e) => { state.posError = e.code === 1 ? "denied" : "failed"; renderLoc(); resolve(); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    });
+  }
+  getLocation();
+
+  // ---- Validation
+  function cleanMobile(v) {
+    let d = (v || "").replace(/[^\d+]/g, "");
+    if (d.startsWith("+61")) d = "0" + d.slice(3);
+    else if (d.startsWith("61") && d.length === 11) d = "0" + d.slice(2);
+    return d.replace(/\D/g, "");
+  }
+  function startAction(action) {
+    const name = $("name").value.trim().replace(/\s+/g, " ");
+    const mobile = cleanMobile($("mobile").value);
+    if (name.split(" ").length < 2) { $("err1").textContent = "Enter your first and last name."; $("name").focus(); return; }
+    if (!/^04\d{8}$/.test(mobile)) { $("err1").textContent = "Enter a 10-digit mobile number starting with 04."; $("mobile").focus(); return; }
+    $("err1").textContent = "";
+    state.name = name; state.mobile = mobile; state.action = action;
+    try { localStorage.setItem("ss_name", name); localStorage.setItem("ss_mobile", mobile); } catch (e) {}
+    if (!state.pos) getLocation();
+    if (action === "out") { renderBreaks(); show("step2"); }
+    else { state.breakMins = 0; openCamera(); }
+  }
+  $("btnIn").onclick = () => startAction("in");
+  $("btnOut").onclick = () => startAction("out");
+
+  // ---- Step 2: breaks
+  const BREAKS = [0, 15, 30, 45, 60];
+  function renderBreaks() {
+    const box = $("breaks"); box.innerHTML = "";
+    BREAKS.forEach((m) => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button";
+      b.textContent = m === 0 ? "No break" : m + " min";
+      b.setAttribute("aria-pressed", String(state.breakMins === m));
+      b.onclick = () => { state.breakMins = m; renderBreaks(); };
+      box.appendChild(b);
+    });
+  }
+  $("breakNext").onclick = openCamera;
+  $("breakBack").onclick = () => show("step1");
+
+  // ---- Step 3: camera
+  async function openCamera() {
+    show("step3");
+    $("photoTitle").textContent = state.action === "in" ? "Selfie to clock in" : "Selfie to clock out";
+    $("photoNote").textContent = "Stand at the " + (site.spot || "clock-in point").toLowerCase() + " so it’s behind you.";
+    $("submit").textContent = state.action === "in" ? "Clock in" : "Clock out";
+    resetPhoto();
+    $("err3").textContent = "";
+    try {
+      state.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 } }, audio: false });
+      $("video").srcObject = state.stream;
+      state.photoSource = "camera";
+    } catch (e) {
+      // Fallback: phone's own camera screen (photo still has to be taken now)
+      state.photoSource = "file_fallback";
+      $("video").hidden = true;
+      $("snap").textContent = "Open camera";
+      $("err3").textContent = "Allow camera access when asked. If it doesn’t open, tap Open camera.";
+    }
+  }
+  function stopCamera() {
+    if (state.stream) { state.stream.getTracks().forEach((t) => t.stop()); state.stream = null; }
+  }
+  function resetPhoto() {
+    state.photo = null; state.clockId = null;
+    $("preview").hidden = true; $("video").hidden = false;
+    $("snap").hidden = false; $("snap").textContent = "Take photo";
+    $("submit").hidden = true; $("retake").hidden = true;
+  }
+  function toJpeg(source, w, h) {
+    const max = 720, scale = Math.min(1, max / Math.max(w, h));
+    const c = $("canvas"); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+    const ctx = c.getContext("2d");
+    ctx.drawImage(source, 0, 0, c.width, c.height);
+    // Stamp time and site onto the photo
+    const stamp = new Date().toLocaleString("en-AU", { timeZone: TZ, dateStyle: "short", timeStyle: "short" }) + "  " + site.name;
+    ctx.font = Math.max(14, Math.round(c.width / 32)) + "px sans-serif";
+    ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(0, c.height - c.width / 14, c.width, c.width / 14);
+    ctx.fillStyle = "#fff"; ctx.fillText(stamp, 10, c.height - c.width / 40);
+    let q = 0.72, url = c.toDataURL("image/jpeg", q);
+    while (url.length > 380000 && q > 0.35) { q -= 0.1; url = c.toDataURL("image/jpeg", q); } // keep ~<280KB
+    return Promise.resolve(url);
+  }
+  function showPreview(blob) {
+    state.photo = blob;
+    $("preview").src = blob;
+    $("preview").hidden = false; $("video").hidden = true;
+    $("snap").hidden = true; $("submit").hidden = false; $("retake").hidden = false;
+  }
+  $("snap").onclick = async () => {
+    if (state.photoSource === "file_fallback") { $("fallbackFile").click(); return; }
+    const v = $("video");
+    if (!v.videoWidth) { $("err3").textContent = "Camera is still starting. Try again in a second."; return; }
+    showPreview(await toJpeg(v, v.videoWidth, v.videoHeight));
+  };
+  $("fallbackFile").onchange = (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    // Reject photos not taken in the last 2 minutes
+    if (f.lastModified && Date.now() - f.lastModified > 120000) {
+      $("err3").textContent = "That photo is too old. Take a new photo now.";
+      e.target.value = ""; return;
+    }
+    const img = new Image();
+    img.onload = async () => { showPreview(await toJpeg(img, img.naturalWidth, img.naturalHeight)); $("err3").textContent = ""; };
+    img.src = URL.createObjectURL(f);
+    e.target.value = "";
+  };
+  $("retake").onclick = () => { resetPhoto(); if (state.photoSource === "file_fallback") { $("video").hidden = true; $("snap").textContent = "Open camera"; } };
+  $("photoBack").onclick = () => { stopCamera(); show(state.action === "out" ? "step2" : "step1"); };
+
+  function uid() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return "x" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  const tfetch = (u, o, ms) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms); return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); };
+  async function postGAS(p) {
+    let last;
+    for (let a = 0; a < 2; a++) {
+      try {
+        const r = await tfetch(C.appsScriptUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(p), redirect: "follow" }, 25000);
+        const j = await r.json(); if (j.ok) return j; last = new Error(j.error || "error");
+      } catch (e) { last = e; }
+    }
+    throw last;
+  }
+  function showBackup(loc) {
+    const t = new Date().toLocaleString("en-AU", { timeZone: TZ, dateStyle: "short", timeStyle: "short" });
+    const txt = "CLOCK " + state.action.toUpperCase() + " (backup)\n" + state.name + " " + state.mobile + "\n" + site.name + " (" + siteCode + ")\n" + t +
+      (state.action === "out" ? "\nBreak: " + state.breakMins + " min" : "") +
+      "\nGPS: " + (state.pos ? state.pos.coords.latitude.toFixed(5) + "," + state.pos.coords.longitude.toFixed(5) + " ±" + Math.round(state.pos.coords.accuracy) + "m" : "not shared") +
+      "\nLocation: " + loc.status + (loc.dist != null ? " (" + loc.dist + " m)" : "");
+    const subj = "Clock " + state.action + " backup – " + state.name + " – " + site.name;
+    const b = $("backup"); b.hidden = false; b.innerHTML = "";
+    const p = document.createElement("p"); p.className = "step-note"; p.textContent = "Still not sending? Use one of these instead (attach your selfie if you can):"; b.appendChild(p);
+    const mk = (href, label) => { const a = document.createElement("a"); a.href = href; a.textContent = label; a.className = "wide"; a.style.cssText = "display:block;text-align:center;text-decoration:none;margin-bottom:10px"; b.appendChild(a); };
+    if (C.officeSms) mk("sms:" + C.officeSms + "?&body=" + encodeURIComponent(txt), "💬 Send by text");
+    mk("mailto:" + C.officeEmail + "?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(txt), "✉ Send by email");
+  }
+
+  $("submit").onclick = async () => {
+    if (state.busy || !state.photo) return;
+    state.busy = true; $("submit").disabled = true; $("retake").disabled = true;
+    $("submit").textContent = "Saving…"; $("err3").textContent = "";
+    if (!state.clockId) state.clockId = uid();   // same ID on retries -> server dedups
+    let loc = locStatus();
+    try {
+      if (!state.pos && !state.posError) await Promise.race([getLocation(), new Promise((r) => setTimeout(r, 6000))]);
+      loc = locStatus();
+      await postGAS({
+        type: "clock", token: C.token, clockId: state.clockId,
+        siteCode: siteCode, siteName: site.name, siteLat: site.lat, siteLng: site.lng, radius: site.radius,
+        name: state.name, mobile: state.mobile, action: state.action, breakMins: state.action === "out" ? state.breakMins : 0,
+        lat: state.pos ? state.pos.coords.latitude : null, lng: state.pos ? state.pos.coords.longitude : null,
+        accuracy: state.pos ? Math.round(state.pos.coords.accuracy) : null,
+        locationStatus: state.posError === "denied" ? "denied" : loc.status,
+        photo: state.photo, photoSource: state.photoSource, userAgent: navigator.userAgent.slice(0, 250)
+      });
+      stopCamera(); state.clockId = null; $("backup").hidden = true;
+      done(loc);
+    } catch (e) {
+      console.error(e);
+      $("err3").textContent = "Couldn’t save. Check your signal and tap " + (state.action === "in" ? "Clock in" : "Clock out") + " again. If it keeps failing, call 0418 533 357.";
+      $("submit").textContent = state.action === "in" ? "Clock in" : "Clock out";
+      showBackup(loc);
+    } finally {
+      state.busy = false; $("submit").disabled = false; $("retake").disabled = false;
+    }
+  };
+
+  function done(loc) {
+    const t = new Date().toLocaleTimeString("en-AU", { timeZone: TZ, hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+    $("doneTitle").textContent = (state.action === "in" ? "Clocked in at " : "Clocked out at ") + t;
+    $("doneNote").textContent = state.action === "in" ? "Have a great shift. Remember to clock out here when you finish." : "Thanks, see you next time.";
+    const rows = [
+      ["Name", state.name], ["Site", site.name],
+      ["Location", loc.status === "on_site" ? "Verified" : loc.status === "off_site" ? "Away from site" : "Not shared"]
+    ];
+    if (state.action === "out") rows.push(["Break", state.breakMins ? state.breakMins + " min" : "None"]);
+    $("receipt").innerHTML = "";
+    rows.forEach(([k, v]) => { const d = document.createElement("div"); const a = document.createElement("span"); const b = document.createElement("span"); a.textContent = k; b.textContent = v; d.append(a, b); $("receipt").appendChild(d); });
+    show("step4");
+  }
+  $("again").onclick = () => { state.action = null; state.breakMins = 0; resetPhoto(); show("step1"); };
+
+  show("step1");
+})();
+</script>
+</body>
+</html>

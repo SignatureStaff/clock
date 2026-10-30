@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Clock-ins · Signature Staff admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script>
+  (function () {
+    var b = (window.SS_CONFIG || {}).brand || {}, r = document.documentElement.style;
+    if (b.primary) r.setProperty("--sky", b.primary);
+    if (b.dark) r.setProperty("--navy", b.dark);
+    if (b.icon) { var l = document.createElement("link"); l.rel = "icon"; l.href = b.icon; document.head.appendChild(l);
+      var a = document.createElement("link"); a.rel = "apple-touch-icon"; a.href = b.icon; document.head.appendChild(a); }
+  })();
+</script>
+<style>
+    :root {
+    --navy: #0A1F44; --sky: #49AADE;
+    --reef: var(--navy); --lagoon: var(--navy); --mango: var(--navy);
+    --surface: #F3F6FA; --card: #FFFFFF; --line: #D6DEEA; --muted: #5B6B85;
+    --danger: #B4361F; --ok: #1C7A45; color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Barlow", system-ui, sans-serif; font-size: 16px; line-height: 1.45; background: var(--surface); color: var(--reef); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; }
+  h1, h2 { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; line-height: 1.1; }
+  h1 { font-size: 34px; margin: 0 0 4px; }
+  h2 { font-size: 24px; margin: 34px 0 10px; }
+  .muted { color: var(--muted); }
+  input, select, button { font: inherit; }
+  input, select { padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--card); color: var(--reef); }
+  button { cursor: pointer; border: 0; border-radius: 6px; padding: 10px 16px; font-weight: 700; background: var(--sky); color: var(--navy); }
+  button.ghost { background: transparent; color: var(--reef); border: 1.5px solid var(--line); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid color-mix(in srgb, var(--lagoon) 50%, transparent); outline-offset: 1px; }
+  .login { max-width: 360px; margin: 60px auto; display: grid; gap: 12px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 20px 0 6px; }
+  .bar label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
+  .spacer { flex: 1; }
+  .scroll { overflow-x: auto; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { font-size: 14px; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+  .t-in { background: color-mix(in srgb, var(--sky) 25%, transparent); color: var(--navy); }
+  .t-out { background: var(--navy); color: #fff; }
+  .ok { color: var(--ok); } .warn { color: #B07400; } .bad { color: var(--danger); }
+  .thumb { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; display: block; background: var(--line); }
+  .err { color: var(--danger); min-height: 1em; }
+  .empty { padding: 26px; text-align: center; color: var(--muted); }
+  dialog { border: 0; border-radius: 14px; padding: 0; max-width: min(92vw, 560px); background: var(--card); }
+  dialog img { display: block; width: 100%; }
+  dialog p { margin: 10px 14px 14px; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  [hidden] { display: none !important; }
+  .brandbar {
+    background: var(--navy); padding: calc(12px + env(safe-area-inset-top, 0px)) 20px 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .brandbar img { height: 34px; width: auto; display: block; background: #fff; border-radius: 999px; padding: 6px 14px; box-sizing: content-box; }
+  .brandbar img { height: 34px; width: auto; display: block; }
+  .brandbar span { font-size: 14px; font-weight: 700; color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <img id="brandLogo" alt="Signature Staff" style="height:36px">
+  <h1>Clock-ins</h1>
+  <p class="muted">Backup clock-in records (also in the "Clock-ins" tab of the Attendance Register Log Google Sheet).</p>
+  <section id="login" class="login" hidden>
+    <label>Admin key<br><input id="key" type="password" autocomplete="current-password" style="width:100%"></label>
+    <button id="go">Open</button>
+    <div class="err" id="lerr"></div>
+  </section>
+  <section id="view" hidden>
+    <div class="bar">
+      <label>From<input type="date" id="from"></label>
+      <label>To<input type="date" id="to"></label>
+      <label>Site<select id="site"><option value="">All sites</option></select></label>
+      <label><span>&nbsp;</span><span><input type="checkbox" id="flagged"> Flagged only</span></label>
+      <button id="load">Load</button>
+      <span class="spacer"></span>
+      <button class="ghost" id="csv">Download CSV</button>
+      <button class="ghost" id="logout">Lock</button>
+    </div>
+    <div class="err" id="err"></div>
+    <div class="scroll"><table><thead><tr><th>Time</th><th>Site</th><th>Worker</th><th>Mobile</th><th>In/Out</th><th>Break</th><th>Location</th><th>Photo</th><th>Flags</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+</main>
+<script>
+(function () {
+  const C = window.SS_CONFIG, TZ = "Australia/Brisbane", $ = (id) => document.getElementById(id);
+  if (C.brand && C.brand.logo) $("brandLogo").src = C.brand.logo;
+  Object.keys(C.sites).forEach((k) => { const o = document.createElement("option"); o.value = k; o.textContent = C.sites[k].name; $("site").appendChild(o); });
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+  $("from").value = today; $("to").value = today;
+  let data = [];
+  const getKey = () => sessionStorage.getItem("ss_admin_key") || "";
+  function init() { const k = getKey(); $("login").hidden = !!k; $("view").hidden = !k; if (k) load(); }
+  $("go").onclick = () => { const k = $("key").value.trim(); if (!k) return; sessionStorage.setItem("ss_admin_key", k); $("key").value = ""; init(); };
+  $("logout").onclick = () => { sessionStorage.removeItem("ss_admin_key"); data = []; $("rows").innerHTML = ""; init(); };
+  const flagsOf = (r) => { const f = []; if (r["Location"] === "off_site") f.push("Off site " + r["Distance m"] + " m"); if (r["Location"] === "denied" || r["Location"] === "unavailable") f.push("No location"); if (r["Photo via fallback"]) f.push("Fallback photo"); return f; };
+  async function load() {
+    $("err").textContent = "Loading…";
+    const q = new URLSearchParams({ action: "clocks", key: getKey(), from: $("from").value, to: $("to").value, site: $("site").value });
+    try {
+      const r = await fetch(C.appsScriptUrl + "?" + q, { redirect: "follow" }); const j = await r.json();
+      if (!j.ok) { if (j.error === "bad key") { sessionStorage.removeItem("ss_admin_key"); init(); $("lerr").textContent = "Wrong admin key."; return; } throw new Error(j.error); }
+      data = j.rows; render(); $("err").textContent = "";
+    } catch (e) { $("err").textContent = "Couldn’t load: " + e.message + ". Use the Google Sheet instead."; }
+  }
+  function render() {
+    const tb = $("rows"); tb.innerHTML = "";
+    const rows = data.filter((r) => !$("flagged").checked || flagsOf(r).length);
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">No clock-ins for this filter.</td></tr>'; return; }
+    rows.slice().reverse().forEach((r) => {
+      const tr = document.createElement("tr"), f = flagsOf(r);
+      const cell = (t, cls) => { const td = document.createElement("td"); td.textContent = t; if (cls) td.className = cls; tr.appendChild(td); return td; };
+      cell(r["Received (Brisbane)"], "num"); cell(r["Site name"] || r["Site code"]); cell(r["Worker"]); cell(r["Mobile"], "num");
+      const io = cell(""); const s = document.createElement("span"); s.className = "tag " + (r["In/Out"] === "out" ? "t-out" : "t-in"); s.textContent = r["In/Out"].toUpperCase(); io.appendChild(s);
+      cell(r["Break mins"] ? r["Break mins"] + " min" : "");
+      cell(r["Location"] === "on_site" ? "On site" : r["Location"] === "off_site" ? r["Distance m"] + " m away" : r["Location"], r["Location"] === "on_site" ? "ok" : "warn");
+      const ph = cell(""); if (/^https:\/\/drive\.google\.com\//.test(r["Photo link"])) { const a = document.createElement("a"); a.href = r["Photo link"]; a.target = "_blank"; a.rel = "noopener"; a.textContent = "View"; ph.appendChild(a); }
+      cell(f.join(", "), f.length ? "bad" : "");
+      tb.appendChild(tr);
+    });
+  }
+  $("load").onclick = load; $("flagged").onchange = render;
+  $("csv").onclick = () => {
+    if (!data.length) return;
+    const cols = Object.keys(data[0]);
+    const q = (v) => { v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v) && isNaN(Number(v))) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
+    const csv = [cols.map(q).join(",")].concat(data.map((r) => cols.map((c) => q(r[c])).join(","))).join("\r\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "clock-ins_" + $("from").value + "_to_" + $("to").value + ".csv"; a.click();
+  };
+  init();
+})();
+</script>
+</body>
+</html>
